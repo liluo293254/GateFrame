@@ -1,7 +1,8 @@
 FROM golang:1.23-alpine AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
-RUN go mod download
+COPY vendor ./vendor
+ENV GOFLAGS=-mod=vendor
 COPY . .
 RUN CGO_ENABLED=0 go build -o /file-service ./cmd/file-service
 
