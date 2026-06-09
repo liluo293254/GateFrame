@@ -1,0 +1,97 @@
+# =============================================================================
+# GateFrame — strict local git exclusions (secrets, artifacts, generated state)
+# =============================================================================
+
+# --- Local dev shell scripts (keep locally; not required in remote repo) ---
+scripts/docker-maintain.sh
+scripts/docker-disk-expand.sh
+scripts/clear-login-rate-limit.sh
+scripts/enable-prometheus-ddev.sh
+scripts/setup-git-hooks.sh
+.githooks/
+gateway/build-ddev.sh
+
+# --- Secrets & credentials (never commit) ---
+.cursor/
+.ddev/
+docs/
+AGENTS.md
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa
+id_rsa.*
+*.crt.local
+secrets/
+credentials/
+*.secret
+**/secrets.yaml
+**/secrets.yml
+
+# Local ddev overrides (may hold production-like secrets)
+.ddev/config.local.yaml
+.ddev/config.*.local.yaml
+.ddev/.global_commands/
+.ddev/traefik/certs/
+
+# --- OS & editor noise ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/settings.json
+.vscode/launch.json.local
+
+# --- Rust (gateway) ---
+gateway/target/
+
+# --- Node (web) ---
+web/node_modules/
+web/dist/
+web/.vite/
+*.tsbuildinfo
+
+# --- Go (services) — regenerate: cd services/<svc> && go mod vendor ---
+services/*/vendor/
+services/*/bin/
+**/*-service
+!**/cmd/
+**/coverage.out
+**/coverage.html
+**/*.test
+**/*.out
+
+# --- ddev generated / runtime (tracked: config.yaml, compose overlays, hooks) ---
+.ddev/.ddev-docker-compose-full.yaml
+.ddev/.ddev-docker-compose-base.yaml
+.ddev/.dbimageBuild/
+.ddev/.webimageBuild/
+.ddev/mutagen/.start-synced
+.ddev/db_snapshots/
+.ddev/web-build/
+
+# --- Logs & temp ---
+*.log
+logs/
+tmp/
+temp/
+.cache/
+
+# --- Deploy runtime data ---
+deploy/minio/data/
+deploy/prometheus/data/
+
+# --- External skill bundle (optional; reinstall from samber/cc-skills-golang) ---
+.cursor/skills/cc-skills-golang/
+
+# --- Agent session artifacts (local only, not source) ---
+docs/agent-errors.local.md
+*.local.md

@@ -1,0 +1,145 @@
+# GateFrame microservice network isolation.
+# Only the Gateway Deployment may reach service ports; clients must use Gateway.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateframe-gateway-ingress
+  namespace: gateframe
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gateframe-gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gateframe
+      ports:
+        - protocol: TCP
+          port: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateframe-user-service
+  namespace: gateframe
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gateframe-user-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: gateframe-gateway
+      ports:
+        - protocol: TCP
+          port: 8082
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateframe-audit-service
+  namespace: gateframe
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gateframe-audit-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: gateframe-gateway
+      ports:
+        - protocol: TCP
+          port: 8084
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateframe-workflow-service
+  namespace: gateframe
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gateframe-workflow-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: gateframe-gateway
+      ports:
+        - protocol: TCP
+          port: 8085
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateframe-search-service
+  namespace: gateframe
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gateframe-search-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: gateframe-gateway
+      ports:
+        - protocol: TCP
+          port: 8086
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateframe-notification-service
+  namespace: gateframe
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gateframe-notification-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: gateframe-gateway
+      ports:
+        - protocol: TCP
+          port: 8087
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateframe-file-service
+  namespace: gateframe
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gateframe-file-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: gateframe-gateway
+      ports:
+        - protocol: TCP
+          port: 8088

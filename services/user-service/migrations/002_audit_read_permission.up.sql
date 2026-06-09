@@ -1,0 +1,2 @@
+-- duplicate for reference
+-- see internal/migrate/migrations/002_audit_read_permission.up.sql

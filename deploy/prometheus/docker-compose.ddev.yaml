@@ -1,0 +1,18 @@
+services:
+  prometheus:
+    container_name: ddev-${DDEV_SITENAME}-prometheus
+    image: prom/prometheus:v2.54.1
+    labels:
+      com.ddev.site-name: ${DDEV_SITENAME}
+      com.ddev.approot: ${DDEV_APPROOT}
+    volumes:
+      - ../deploy/prometheus/prometheus.ddev.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    ports:
+      - "9090:9090"
+    depends_on:
+      - gateway
+    restart: unless-stopped

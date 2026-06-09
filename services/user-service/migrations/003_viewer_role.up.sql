@@ -1,0 +1,1 @@
+-- see internal/migrate/migrations/003_viewer_role.up.sql

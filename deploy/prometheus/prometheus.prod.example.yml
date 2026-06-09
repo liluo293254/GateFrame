@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: gateframe-gateway
+    metrics_path: /metrics
+    static_configs:
+      # Replace host/port for your deployment (K8s service DNS, load balancer, etc.)
+      - targets: ["gateway:3000"]
+        labels:
+          environment: production
+
+# Example Kubernetes pod discovery (uncomment and adapt):
+#  - job_name: gateframe-gateway-k8s
+#    metrics_path: /metrics
+#    kubernetes_sd_configs:
+#      - role: pod
+#    relabel_configs:
+#      - source_labels: [__meta_kubernetes_pod_label_app]
+#        action: keep
+#        regex: gateframe-gateway

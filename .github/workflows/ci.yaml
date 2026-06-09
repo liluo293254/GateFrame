@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: |
+            services/user-service/go.sum
+            services/audit-service/go.sum
+            services/workflow-service/go.sum
+            services/search-service/go.sum
+            services/notification-service/go.sum
+            services/file-service/go.sum
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Gateway tests
+        run: make -C gateway test
+
+      - name: Go service tests
+        run: |
+          for svc in user-service audit-service workflow-service search-service notification-service file-service; do
+            echo "==> testing services/$svc"
+            (cd "services/$svc" && go test ./...)
+          done
+
+      - name: Web build
+        run: |
+          cd web
+          npm ci
+          npm run build
