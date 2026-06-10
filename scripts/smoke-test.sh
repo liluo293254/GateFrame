@@ -45,16 +45,21 @@ WF_NAME="smoke-wf-$(date +%s)"
 CREATE_WF="$(curl -sf -X POST "${GATEWAY_URL}/api/workflows" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H 'Content-Type: application/json' \
-  -d "{\"name\":\"${WF_NAME}\",\"description\":\"Smoke workflow\",\"status\":\"draft\"}")"
+  -d "{\"name\":\"${WF_NAME}\",\"description\":\"Smoke approval request\",\"category\":\"general\",\"priority\":\"normal\",\"requester_label\":\"admin\"}")"
 echo "${CREATE_WF}" | grep -q '"id"'
 WF_ID="$(echo "${CREATE_WF}" | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['id'])")"
 
-echo "==> update workflow"
-curl -sf -X PUT "${GATEWAY_URL}/api/workflows/${WF_ID}" \
+echo "==> submit workflow for review"
+curl -sf -X POST "${GATEWAY_URL}/api/workflows/${WF_ID}/submit" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H 'Content-Type: application/json' \
-  -d '{"name":"'"${WF_NAME}"'","description":"Updated","status":"active"}' \
-  | grep -q '"status":"active"'
+  -d '{"actor_label":"admin"}' | grep -q '"status":"pending"'
+
+echo "==> approve workflow"
+curl -sf -X POST "${GATEWAY_URL}/api/workflows/${WF_ID}/approve" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H 'Content-Type: application/json' \
+  -d '{"comment":"smoke approved","actor_label":"admin"}' | grep -q '"status":"approved"'
 
 echo "==> delete workflow"
 curl -sf -X DELETE "${GATEWAY_URL}/api/workflows/${WF_ID}" \

@@ -30,6 +30,23 @@ async fn require_permission_code(
     Ok(next.run(req).await)
 }
 
+async fn require_any_permission_code(
+    codes: &'static [&'static str],
+    req: Request<Body>,
+    next: Next,
+) -> Result<Response, AppError> {
+    let ctx = req
+        .extensions()
+        .get::<TenantContext>()
+        .ok_or(AppError::Unauthorized)?;
+    for code in codes {
+        if ctx.has_permission(code) {
+            return Ok(next.run(req).await);
+        }
+    }
+    Err(AppError::Forbidden)
+}
+
 async fn require_user_read(req: Request<Body>, next: Next) -> Result<Response, AppError> {
     require_permission_code("user.read", req, next).await
 }
@@ -70,13 +87,8 @@ async fn require_workflow_manage(req: Request<Body>, next: Next) -> Result<Respo
     require_permission_code("workflow.manage", req, next).await
 }
 
-async fn require_workflow_id_permission(req: Request<Body>, next: Next) -> Result<Response, AppError> {
-    use axum::http::Method;
-    let code = match *req.method() {
-        Method::PUT | Method::DELETE => "workflow.manage",
-        _ => return Err(AppError::BadRequest("method not allowed".into())),
-    };
-    require_permission_code(code, req, next).await
+async fn require_workflow_read_or_manage(req: Request<Body>, next: Next) -> Result<Response, AppError> {
+    require_any_permission_code(&["workflow.read", "workflow.manage"], req, next).await
 }
 
 async fn require_search_read(req: Request<Body>, next: Next) -> Result<Response, AppError> {
@@ -214,23 +226,53 @@ pub fn protected_routes(state: &AppState) -> Router<AppState> {
     let workflow_read = with_perm!(
         state,
         require_workflow_read,
-        Router::new().route("/api/workflows", get(proxy::forward_to_workflow_service))
+        Router::new()
+            .route("/api/workflows", get(proxy::forward_to_workflow_service))
+            .route(
+                "/api/workflows/:id",
+                get(proxy::forward_to_workflow_service),
+            )
+            .route(
+                "/api/workflows/:id/events",
+                get(proxy::forward_to_workflow_service),
+            )
     );
 
-    let workflow_manage = with_perm!(
+    let workflow_request = with_perm!(
+        state,
+        require_workflow_read_or_manage,
+        Router::new()
+            .route("/api/workflows", post(proxy::forward_to_workflow_service))
+            .route(
+                "/api/workflows/:id",
+                axum::routing::put(proxy::forward_to_workflow_service),
+            )
+            .route(
+                "/api/workflows/:id/submit",
+                post(proxy::forward_to_workflow_service),
+            )
+    );
+
+    let workflow_review = with_perm!(
         state,
         require_workflow_manage,
-        Router::new().route("/api/workflows", post(proxy::forward_to_workflow_service))
-    );
-
-    let workflow_by_id = with_perm!(
-        state,
-        require_workflow_id_permission,
-        Router::new().route(
-            "/api/workflows/:id",
-            axum::routing::put(proxy::forward_to_workflow_service)
-                .delete(proxy::forward_to_workflow_service),
-        )
+        Router::new()
+            .route(
+                "/api/workflows/:id/approve",
+                post(proxy::forward_to_workflow_service),
+            )
+            .route(
+                "/api/workflows/:id/reject",
+                post(proxy::forward_to_workflow_service),
+            )
+            .route(
+                "/api/workflows/:id/request-changes",
+                post(proxy::forward_to_workflow_service),
+            )
+            .route(
+                "/api/workflows/:id",
+                axum::routing::delete(proxy::forward_to_workflow_service),
+            )
     );
 
     let search_read = with_perm!(
@@ -333,8 +375,8 @@ pub fn protected_routes(state: &AppState) -> Router<AppState> {
         .merge(rbac_manage)
         .merge(audit_read)
         .merge(workflow_read)
-        .merge(workflow_manage)
-        .merge(workflow_by_id)
+        .merge(workflow_request)
+        .merge(workflow_review)
         .merge(search_read)
         .merge(search_manage)
         .merge(notification_read)

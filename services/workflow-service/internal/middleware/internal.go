@@ -72,6 +72,32 @@ func RequirePermission(code string) gin.HandlerFunc {
 	}
 }
 
+func RequireAnyPermission(codes ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		perms, _ := c.Get("permissions")
+		list, ok := perms.([]string)
+		if !ok {
+			response.Forbidden(c)
+			c.Abort()
+			return
+		}
+		for _, p := range list {
+			if p == "*" {
+				c.Next()
+				return
+			}
+			for _, code := range codes {
+				if p == code {
+					c.Next()
+					return
+				}
+			}
+		}
+		response.Forbidden(c)
+		c.Abort()
+	}
+}
+
 func parsePermissions(raw string) []string {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {

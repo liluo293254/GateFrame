@@ -47,9 +47,15 @@ func main() {
 	api.Use(middleware.LoadPermissionsFromGateway())
 	{
 		api.GET("/workflows", middleware.RequirePermission("workflow.read"), h.List)
-		api.POST("/workflows", middleware.RequirePermission("workflow.manage"), h.Create)
-		api.PUT("/workflows/:id", middleware.RequirePermission("workflow.manage"), h.Update)
+		api.GET("/workflows/:id", middleware.RequirePermission("workflow.read"), h.Get)
+		api.GET("/workflows/:id/events", middleware.RequirePermission("workflow.read"), h.ListEvents)
+		api.POST("/workflows", middleware.RequireAnyPermission("workflow.read", "workflow.manage"), h.Create)
+		api.PUT("/workflows/:id", middleware.RequireAnyPermission("workflow.read", "workflow.manage"), h.Update)
 		api.DELETE("/workflows/:id", middleware.RequirePermission("workflow.manage"), h.Delete)
+		api.POST("/workflows/:id/submit", middleware.RequireAnyPermission("workflow.read", "workflow.manage"), h.Submit)
+		api.POST("/workflows/:id/approve", middleware.RequirePermission("workflow.manage"), h.Approve)
+		api.POST("/workflows/:id/reject", middleware.RequirePermission("workflow.manage"), h.Reject)
+		api.POST("/workflows/:id/request-changes", middleware.RequirePermission("workflow.manage"), h.RequestChanges)
 	}
 
 	srv := &http.Server{

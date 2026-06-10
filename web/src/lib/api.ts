@@ -241,9 +241,38 @@ export type Workflow = {
   tenant_id: string
   name: string
   description: string
+  category: string
+  priority: string
   status: string
+  requester_id?: string
+  requester_label: string
+  reviewer_id?: string
+  review_comment?: string
+  submitted_at?: string
+  reviewed_at?: string
   created_at: string
   updated_at: string
+}
+
+export type WorkflowEvent = {
+  id: string
+  workflow_id: string
+  tenant_id: string
+  actor_id?: string
+  actor_label: string
+  event_type: string
+  from_status: string
+  to_status: string
+  comment?: string
+  created_at: string
+}
+
+export function getWorkflow(token: string, id: string) {
+  return apiRequest<Workflow>(`/api/workflows/${id}`, { token })
+}
+
+export function listWorkflowEvents(token: string, id: string) {
+  return apiRequest<WorkflowEvent[]>(`/api/workflows/${id}/events`, { token })
 }
 
 export function listWorkflows(token: string) {
@@ -253,13 +282,21 @@ export function listWorkflows(token: string) {
 export type CreateWorkflowPayload = {
   name: string
   description?: string
-  status?: string
+  category?: string
+  priority?: string
+  requester_label?: string
 }
 
 export type UpdateWorkflowPayload = {
   name?: string
   description?: string
-  status?: string
+  category?: string
+  priority?: string
+}
+
+export type ReviewWorkflowPayload = {
+  comment?: string
+  actor_label?: string
 }
 
 export function createWorkflow(token: string, payload: CreateWorkflowPayload) {
@@ -282,6 +319,38 @@ export function deleteWorkflow(token: string, id: string) {
   return apiRequest<{ deleted: boolean; id: string }>(`/api/workflows/${id}`, {
     method: 'DELETE',
     token,
+  })
+}
+
+export function submitWorkflow(token: string, id: string, payload: ReviewWorkflowPayload = {}) {
+  return apiRequest<Workflow>(`/api/workflows/${id}/submit`, {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
+export function approveWorkflow(token: string, id: string, payload: ReviewWorkflowPayload = {}) {
+  return apiRequest<Workflow>(`/api/workflows/${id}/approve`, {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
+export function rejectWorkflow(token: string, id: string, payload: ReviewWorkflowPayload) {
+  return apiRequest<Workflow>(`/api/workflows/${id}/reject`, {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  })
+}
+
+export function requestWorkflowChanges(token: string, id: string, payload: ReviewWorkflowPayload) {
+  return apiRequest<Workflow>(`/api/workflows/${id}/request-changes`, {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
   })
 }
 
